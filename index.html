@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admit Card Generator | Darrang Royal Academy</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+<style>
+  :root{
+    --navy:#12345c;
+    --navy-dark:#0d2540;
+    --gold:#b58a2b;
+    --gold-soft:#f0c463;
+    --ink:#12263f;
+    --muted:#6b7c8f;
+    --line:#d7dee7;
+    --page:#eef1f5;
+  }
+
+  *{ box-sizing:border-box; }
+
+  body{
+    font-family:"Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    background:var(--page);
+    color:var(--ink);
+    padding-bottom:56px;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------------- App bar ---------------- */
+  .app-bar{
+    background:linear-gradient(135deg, var(--navy-dark), var(--navy));
+    color:#fff;
+    padding:16px 0;
+    box-shadow:0 2px 16px rgba(13,37,64,.28);
+    margin-bottom:30px;
+  }
+  .app-bar .bi-mortarboard-fill{ color:var(--gold-soft); font-size:1.9rem; }
+  .app-title{ font-weight:700; font-size:1.06rem; letter-spacing:.3px; line-height:1.25; }
+  .app-sub{ font-size:.78rem; color:#b9c9dc; letter-spacing:.3px; }
+
+  /* ---------------- Panels ---------------- */
+  .panel{
+    background:#fff;
+    border:1px solid #dde4ec;
+    border-radius:10px;
+    box-shadow:0 6px 22px rgba(18,52,92,.07);
+    overflow:hidden;
+  }
+  .panel-head{
+    padding:14px 18px;
+    border-bottom:1px solid #e8edf3;
+    font-weight:700;
+    color:var(--navy);
+    display:flex;
+    align-items:center;
+    gap:9px;
+    font-size:.94rem;
+    background:#fbfcfe;
+  }
+  .panel-body{ padding:18px; }
+
+  /* ---------------- Form ---------------- */
+  .form-label{
+    font-size:.76rem;
+    font-weight:700;
+    color:#42586f;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    margin-bottom:5px;
+  }
+  .form-control, .form-select{
+    border-color:#cfd8e3;
+    padding:.55rem .75rem;
+    font-size:.92rem;
+    border-radius:7px;
+  }
+  .form-control:focus, .form-select:focus{
+    border-color:var(--navy);
+    box-shadow:0 0 0 .2rem rgba(18,52,92,.12);
+  }
+  .form-control[readonly]{ background:#f4f7fa; font-weight:600; color:var(--navy); }
+  .form-text{ font-size:.74rem; }
+
+  .btn-navy{
+    background:var(--navy);
+    border:1px solid var(--navy);
+    color:#fff;
+    font-weight:600;
+    letter-spacing:.2px;
+  }
+  .btn-navy:hover, .btn-navy:focus{ background:var(--navy-dark); border-color:var(--navy-dark); color:#fff; }
+
+  .btn-outline-navy{
+    border:1px solid #b9c6d6;
+    color:var(--navy);
+    font-weight:600;
+    background:#fff;
+  }
+  .btn-outline-navy:hover{ background:#eef3f9; color:var(--navy-dark); border-color:#9db0c6; }
+
+  /* ---------------- A4 size badge ---------------- */
+  .size-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    font-size:.7rem;
+    font-weight:700;
+    letter-spacing:.6px;
+    text-transform:uppercase;
+    color:var(--navy);
+    background:#e8eef6;
+    border:1px solid #c8d5e5;
+    border-radius:20px;
+    padding:3px 10px;
+  }
+
+  /* ---------------- Admit card ---------------- */
+  #printArea{
+    width:210mm;
+    max-width:100%;
+    margin:0 auto;
+  }
+
+  .admit-card{
+    position:relative;
+    background:#fff;
+    border:2px solid var(--navy);
+    border-radius:6px;
+    padding:20px 24px 18px;
+    box-shadow:0 12px 34px rgba(16,42,67,.13);
+  }
+  .admit-card::after{
+    content:"";
+    position:absolute;
+    inset:5px;
+    border:1px solid var(--gold);
+    border-radius:3px;
+    pointer-events:none;
+  }
+
+  /* Header */
+  .ac-header{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    padding-bottom:13px;
+    border-bottom:3px double var(--navy);
+  }
+
+  /* ---- School logo slot (you supply the image) ---- */
+  .ac-logo{
+    width:86px; height:86px; flex:0 0 86px;
+    display:grid; place-items:center;
+    overflow:hidden;
+    background:transparent;
+  }
+  .ac-logo img,
+  .ac-logo a{
+    display:block;
+    width:100%;
+    height:100%;
+  }
+  .ac-logo img{ object-fit:contain; }
+
+  .ac-school{ flex:1; text-align:center; min-width:0; }
+  .ac-school h1{
+    font-family:Georgia, "Times New Roman", serif;
+    font-size:1.6rem;
+    font-weight:700;
+    letter-spacing:.6px;
+    text-transform:uppercase;
+    color:var(--navy);
+    margin:0 0 4px;
+    line-height:1.15;
+  }
+  .ac-addr{
+    margin:0 0 4px;
+    font-size:.8rem;
+    color:#3f556b;
+    letter-spacing:.2px;
+  }
+  .ac-contact{
+    margin:0;
+    font-size:.78rem;
+    color:#3f556b;
+    display:flex;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:4px 12px;
+  }
+  .ac-contact i{ color:var(--gold); margin-right:4px; }
+
+  .ac-session{
+    width:84px; flex:0 0 84px;
+    text-align:center;
+    border:1px solid var(--line);
+    border-radius:5px;
+    padding:7px 4px;
+    background:#f8fafc;
+  }
+  .ac-session span{
+    display:block;
+    font-size:.6rem;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color:var(--muted);
+    font-weight:700;
+  }
+  .ac-session strong{
+    display:block;
+    font-size:.82rem;
+    color:var(--navy);
+    letter-spacing:.3px;
+  }
+
+  /* Title bar */
+  .ac-titlebar{
+    margin-top:15px;
+    background:var(--navy);
+    color:#fff;
+    border-radius:3px;
+    padding:9px 15px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .ac-titlebar .ac-title{
+    font-size:.82rem;
+    font-weight:700;
+    letter-spacing:3.5px;
+    text-transform:uppercase;
+  }
+  .ac-titlebar .ac-exam{
+    font-size:.92rem;
+    font-weight:700;
+    color:var(--gold-soft);
+    letter-spacing:.3px;
+  }
+
+  /* Details table */
+  .ac-details{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:16px;
+  }
+  .ac-details tr{ border-bottom:1px dotted #cbd5e1; }
+  .ac-details tr:last-child{ border-bottom:none; }
+  .ac-details th{
+    width:36%;
+    text-align:left;
+    vertical-align:top;
+    padding:9px 10px 9px 0;
+    font-size:.74rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.7px;
+    color:#4a5f76;
+  }
+  .ac-details td{
+    padding:9px 0;
+    font-size:.96rem;
+    font-weight:600;
+    color:var(--ink);
+    word-break:break-word;
+  }
+
+  /* Instructions */
+  .ac-section-title{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:20px 0 10px;
+    padding-bottom:5px;
+    border-bottom:1px solid var(--line);
+    font-size:.76rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:1.3px;
+    color:var(--navy);
+  }
+  .ac-section-title i{ color:var(--gold); }
+
+  .ac-instructions{
+    margin:0;
+    padding-left:1.2rem;
+    font-size:.83rem;
+    line-height:1.62;
+    color:#33475c;
+  }
+  .ac-instructions li{ margin-bottom:2px; }
+
+  /* Signature */
+  .ac-sign{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:34px;
+    margin-top:38px;
+  }
+  .ac-sign-box{ text-align:center; min-width:190px; }
+  .ac-sign-line{
+    border-top:1px solid #40536a;
+    margin-bottom:6px;
+  }
+  .ac-sign-role{
+    display:block;
+    font-size:.76rem;
+    font-weight:700;
+    letter-spacing:.4px;
+    color:#2c3e50;
+  }
+  .ac-sign-box small{
+    display:block;
+    font-size:.68rem;
+    color:var(--muted);
+    margin-top:2px;
+  }
+
+  /* Footer */
+  .ac-footer{
+    margin-top:20px;
+    padding-top:8px;
+    border-top:1px solid var(--line);
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:6px 14px;
+    font-size:.66rem;
+    letter-spacing:.3px;
+    color:#8494a6;
+  }
+
+  /* ---------------- Responsive (screen) ---------------- */
+  @media (max-width: 680px){
+    .admit-card{ padding:16px 15px 16px; }
+    .admit-card::after{ inset:4px; }
+    .ac-header{ flex-direction:column; gap:10px; text-align:center; }
+    .ac-logo{ width:74px; height:74px; flex:0 0 74px; }
+    .ac-session{ width:auto; flex:0 0 auto; padding:5px 12px; }
+    .ac-session span, .ac-session strong{ display:inline; }
+    .ac-session span{ margin-right:5px; }
+    .ac-school h1{ font-size:1.15rem; letter-spacing:.3px; }
+    .ac-contact{ font-size:.72rem; }
+    .ac-titlebar{ justify-content:center; text-align:center; }
+    .ac-titlebar .ac-title{ letter-spacing:2px; }
+    .ac-details th{ width:42%; font-size:.68rem; }
+    .ac-details td{ font-size:.86rem; }
+    .ac-sign{ flex-direction:column; align-items:center; gap:30px; }
+    .ac-sign-box{ min-width:200px; }
+    .ac-instructions{ font-size:.78rem; }
+  }
+
+  /* ============================================================
+     PRINT  —  strict A4 PORTRAIT
+     ============================================================ */
+  @media print{
+    /* A4 portrait, 210mm × 297mm, 12mm margins all round */
+    @page{
+      size: A4 portrait;
+      margin: 12mm;
+    }
+
+    html, body{
+      background:#fff !important;
+      margin:0 !important;
+      padding:0 !important;
+      width:auto !important;
+      height:auto !important;
+      -webkit-print-color-adjust:exact;
+      print-color-adjust:exact;
+    }
+
+    /* 1. Flatten the Bootstrap grid so the card sits flush at the
+          top-left of the printable area — no gutters, no offsets,
+          no leftover column widths that could push it to a 2nd page. */
+    .container,
+    .row,
+    .col-lg-5,
+    .col-lg-7,
+    .col-lg-7 > *{
+      display:block !important;
+      width:100% !important;
+      max-width:100% !important;
+      min-width:0 !important;
+      margin:0 !important;
+      padding:0 !important;
+      flex:0 0 auto !important;
+    }
+
+    #printArea{
+      width:100% !important;
+      max-width:100% !important;
+      margin:0 !important;
+      padding:0 !important;
+    }
+
+    /* 2. The admit card fills the A4 text area and never splits */
+    .admit-card{
+      width:100% !important;
+      border:2px solid #000 !important;
+      border-radius:0 !important;
+      box-shadow:none !important;
+      padding:8mm 9mm !important;
+      page-break-inside:avoid !important;
+      break-inside:avoid !important;
+      -webkit-print-color-adjust:exact;
+      print-color-adjust:exact;
+    }
+    .admit-card::after{
+      inset:3mm !important;
+      border:1px solid #8a6a1f !important;
+    }
+
+    /* 3. Preserve the institutional colour scheme */
+    .ac-titlebar{
+      background:#12345c !important;
+      color:#fff !important;
+      -webkit-print-color-adjust:exact;
+      print-color-adjust:exact;
+    }
+    .ac-titlebar .ac-exam{ color:#ffe9b0 !important; }
+
+    .ac-school h1{ color:#12345c !important; }
+    .ac-header{ border-bottom-color:#12345c !important; }
+
+    /* Logo prints as-is */
+    .ac-logo{
+      border:none !important;
+      background:transparent !important;
+    }
+    .ac-logo img{
+      -webkit-print-color-adjust:exact;
+      print-color-adjust:exact;
+    }
+
+    .ac-session{
+      background:#f8fafc !important;
+      border-color:#d7dee7 !important;
+      -webkit-print-color-adjust:exact;
+      print-color-adjust:exact;
+    }
+
+    /* 4. Safety: never let content spill onto a second sheet */
+    .ac-details,
+    .ac-instructions,
+    .ac-sign,
+    .ac-footer{
+      page-break-inside:avoid;
+      break-inside:avoid;
+    }
+
+    /* ==========================================================
+       5. HIDE ALL SCREEN-ONLY UI — must come LAST so it wins
+          over the grid-flattening rule above.
+          Removes: app bar, form panel, and the preview toolbar
+          ("Live Preview", "A4 Portrait" badge, Print/PDF button).
+       ========================================================== */
+    .no-print,
+    .no-print *{
+      display:none !important;
+      visibility:hidden !important;
+      height:0 !important;
+      width:0 !important;
+      overflow:hidden !important;
+      margin:0 !important;
+      padding:0 !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= APP BAR (screen only) ================= -->
+<div class="app-bar no-print">
+  <div class="container d-flex align-items-center gap-3">
+    <i class="bi bi-mortarboard-fill"></i>
+    <div>
+      <div class="app-title">Admit Card Generator</div>
+      <div class="app-sub">Darrang Royal Academy &middot; Examination Cell</div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row g-4">
+
+    <!-- ================= FORM (screen only) ================= -->
+    <div class="col-lg-5">
+      <div class="panel no-print">
+        <div class="panel-head">
+          <i class="bi bi-pencil-square"></i> Student Details
+        </div>
+        <div class="panel-body">
+
+          <form id="admitForm" novalidate autocomplete="off">
+
+            <!-- Name -->
+            <div class="mb-3">
+              <label for="studentName" class="form-label">Name of Student</label>
+              <input type="text"
+                     class="form-control"
+                     id="studentName"
+                     placeholder="e.g. Anurag Deka"
+                     pattern="[A-Za-z][A-Za-z .'\-]{1,59}"
+                     maxlength="60"
+                     required>
+              <div class="invalid-feedback">Please enter the student's full name (letters only, min 2 characters).</div>
+            </div>
+
+            <!-- Guardian -->
+            <div class="mb-3">
+              <label for="guardianName" class="form-label">Guardian's Name</label>
+              <input type="text"
+                     class="form-control"
+                     id="guardianName"
+                     placeholder="e.g. Bhaskar Deka"
+                     pattern="[A-Za-z][A-Za-z .'\-]{1,59}"
+                     maxlength="60"
+                     required>
+              <div class="invalid-feedback">Please enter the guardian's full name (letters only, min 2 characters).</div>
+            </div>
+
+            <!-- Roll No -->
+            <div class="mb-3">
+              <label for="rollNo" class="form-label">Roll Number</label>
+              <input type="text"
+                     class="form-control"
+                     id="rollNo"
+                     placeholder="e.g. 2026/DR/0142"
+                     pattern="[A-Za-z0-9/\-]{1,20}"
+                     maxlength="20"
+                     required>
+              <div class="invalid-feedback">Enter a valid roll number (letters, digits, "/" or "-", up to 20 characters).</div>
+            </div>
+
+            <!-- Class -->
+            <div class="mb-3">
+              <label for="studentClass" class="form-label">Class</label>
+              <select class="form-select" id="studentClass" required>
+                <option value="" selected disabled>Select class</option>
+                <option value="VI">VI</option>
+                <option value="VII">VII</option>
+                <option value="IX">IX</option>
+                <option value="X">X</option>
+                <option value="XI">XI</option>
+                <option value="XII">XII</option>
+              </select>
+              <div class="invalid-feedback">Please select a class.</div>
+            </div>
+
+            <!-- Examination (auto) -->
+            <div class="mb-3">
+              <label for="examName" class="form-label">Examination</label>
+              <input type="text" class="form-control" id="examName" readonly placeholder="Auto-selected from class">
+              <div class="form-text text-muted">Set automatically based on the selected class.</div>
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+              <button type="submit" class="btn btn-navy py-2">
+                <i class="bi bi-magic"></i> Generate &amp; Preview
+              </button>
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-navy flex-fill" id="resetBtn">
+                  <i class="bi bi-arrow-counterclockwise"></i> Reset
+                </button>
+                <button type="button" class="btn btn-outline-navy flex-fill js-print">
+                  <i class="bi bi-printer"></i> Print / PDF
+                </button>
+              </div>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= PREVIEW / CARD ================= -->
+    <div class="col-lg-7">
+
+      <!-- Preview toolbar — screen only -->
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 no-print">
+        <div class="d-flex align-items-center gap-2">
+          <span class="text-muted small"><i class="bi bi-eye"></i> Live Preview</span>
+          <span class="size-badge"><i class="bi bi-file-earmark"></i> A4 Portrait</span>
+        </div>
+        <button type="button" class="btn btn-navy btn-sm js-print">
+          <i class="bi bi-printer"></i> Print / Save as PDF
+        </button>
+      </div>
+
+      <div id="printArea">
+        <div class="admit-card" id="admitCard">
+
+          <!-- Header -->
+          <header class="ac-header">
+
+            <!-- ============================================================
+                 SCHOOL LOGO
+                 ------------------------------------------------------------
+                 Replace the src below with your own logo file.
+                 Put the file in the same folder or a subfolder and reference it, e.g.
+                     src="logo/DRA Logo.png"
+                     src="images/school-logo.png"
+                 A square PNG with a transparent background works best.
+                 ============================================================ -->
+            <div class="ac-logo" id="cardLogo">
+              <img src="logo/DRA Logo.png" alt="Darrang Royal Academy logo">
+            </div>
+
+            <div class="ac-school">
+              <h1>Darrang Royal Academy</h1>
+              <p class="ac-addr">
+                <i class="bi bi-geo-alt-fill"></i>
+                Kharupetia College Turning, Kharupetia, Darrang, Assam
+              </p>
+              <p class="ac-contact">
+                <span><i class="bi bi-telephone-fill"></i>+91 9282479955</span>
+                <span><i class="bi bi-envelope-fill"></i>darrangroyalacademy@gmail.com</span>
+              </p>
+            </div>
+
+            <div class="ac-session">
+              <span>Session</span>
+              <strong>2026&ndash;27</strong>
+            </div>
+          </header>
+
+          <!-- Title bar -->
+          <div class="ac-titlebar">
+            <span class="ac-title">Admit Card</span>
+            <span class="ac-exam" id="cardExamBar">&mdash;</span>
+          </div>
+
+          <!-- Details -->
+          <table class="ac-details">
+            <tbody>
+              <tr>
+                <th>Name of Student</th>
+                <td id="cardName">&mdash;</td>
+              </tr>
+              <tr>
+                <th>Guardian's Name</th>
+                <td id="cardGuardian">&mdash;</td>
+              </tr>
+              <tr>
+                <th>Roll Number</th>
+                <td id="cardRoll">&mdash;</td>
+              </tr>
+              <tr>
+                <th>Class</th>
+                <td id="cardClass">&mdash;</td>
+              </tr>
+              <tr>
+                <th>Examination</th>
+                <td id="cardExamRow">&mdash;</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Instructions -->
+          <div class="ac-section-title">
+            <i class="bi bi-list-check"></i> Instructions to Candidates
+          </div>
+          <ol class="ac-instructions" id="cardInstructions"></ol>
+
+          <!-- Signatures -->
+          <div class="ac-sign">
+            <div class="ac-sign-box">
+              <div class="ac-sign-line"></div>
+              <span class="ac-sign-role">Signature of Candidate / Guardian</span>
+            </div>
+            <div class="ac-sign-box">
+              <div class="ac-sign-line"></div>
+              <span class="ac-sign-role">Authorized Signatory</span>
+              <small>Principal, Darrang Royal Academy</small>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="ac-footer">
+            <span>This admit card is not transferable and must be produced on demand.</span>
+            <span>Issued by the Examination Cell, Darrang Royal Academy.</span>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ================= SCRIPTS ================= -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  /* ============================================================
+     1. CONFIGURATION  (edit these values freely)
+     ============================================================ */
+
+  // Class  ->  Examination name mapping
+  const EXAM_MAP = {
+    "VI" : "2nd Unit Test 2026-27",
+    "VII": "2nd Unit Test 2026-27",
+    "IX" : "Half Yearly Examination 2026-27",
+    "X"  : "Half Yearly Examination 2026-27",
+    "XI" : "Half Yearly Examination 2026-27",
+    "XII": "Half Yearly Examination 2026-27"
+  };
+
+  // Default instructions printed on the admit card.
+  const INSTRUCTIONS = [
+    "Bring this admit card to the examination hall without fail.",
+    "Arrive at the examination centre before the reporting time.",
+    "Follow all instructions given by the invigilator.",
+    "Do not use unfair means; any malpractice will lead to disciplinary action.",
+    "Carry only the permitted stationery items.",
+    "Keep the admit card safe and produce it on demand."
+  ];
+
+  const PLACEHOLDER = "\u2014"; // em dash
+
+  /* ============================================================
+     2. ELEMENT REFERENCES
+     ============================================================ */
+
+  const form          = document.getElementById("admitForm");
+  const studentName   = document.getElementById("studentName");
+  const guardianName  = document.getElementById("guardianName");
+  const rollNo        = document.getElementById("rollNo");
+  const studentClass  = document.getElementById("studentClass");
+  const examName      = document.getElementById("examName");
+
+  const cardExamBar   = document.getElementById("cardExamBar");
+  const cardName      = document.getElementById("cardName");
+  const cardGuardian  = document.getElementById("cardGuardian");
+  const cardRoll      = document.getElementById("cardRoll");
+  const cardClass     = document.getElementById("cardClass");
+  const cardExamRow   = document.getElementById("cardExamRow");
+  const instrList     = document.getElementById("cardInstructions");
+
+  const resetBtn      = document.getElementById("resetBtn");
+
+  let isGenerated = false;
+
+  /* ============================================================
+     3. INSTRUCTIONS RENDERING
+     ============================================================ */
+
+  function renderInstructions() {
+    instrList.innerHTML = "";
+    INSTRUCTIONS.forEach(function (text) {
+      const li = document.createElement("li");
+      li.textContent = text;
+      instrList.appendChild(li);
+    });
+  }
+
+  /* ============================================================
+     4. CLASS -> EXAM MAPPING
+     ============================================================ */
+
+  function getExamForClass(cls) {
+    return EXAM_MAP[cls] || "";
+  }
+
+  studentClass.addEventListener("change", function () {
+    const exam = getExamForClass(studentClass.value);
+    examName.value = exam;
+
+    // If a card has already been generated, keep it in sync.
+    if (isGenerated) {
+      cardExamBar.textContent = exam || PLACEHOLDER;
+      cardExamRow.textContent = exam || PLACEHOLDER;
+    }
+  });
+
+  /* ============================================================
+     5. CARD RENDERING
+     ============================================================ */
+
+  function renderCard() {
+    const exam = getExamForClass(studentClass.value);
+
+    cardName.textContent     = studentName.value.trim();
+    cardGuardian.textContent = guardianName.value.trim();
+    cardRoll.textContent     = rollNo.value.trim().toUpperCase();
+    cardClass.textContent    = studentClass.value;
+    cardExamBar.textContent  = exam;
+    cardExamRow.textContent  = exam;
+
+    isGenerated = true;
+  }
+
+  function clearCard() {
+    cardName.textContent     = PLACEHOLDER;
+    cardGuardian.textContent = PLACEHOLDER;
+    cardRoll.textContent     = PLACEHOLDER;
+    cardClass.textContent    = PLACEHOLDER;
+    cardExamBar.textContent  = PLACEHOLDER;
+    cardExamRow.textContent  = PLACEHOLDER;
+    isGenerated = false;
+  }
+
+  /* ============================================================
+     6. VALIDATION + GENERATE
+     ============================================================ */
+
+  function validateAndGenerate() {
+    // Trim values so whitespace-only input fails the pattern check.
+    [studentName, guardianName, rollNo].forEach(function (el) {
+      el.value = el.value.trim();
+    });
+
+    if (!form.checkValidity()) {
+      form.classList.add("was-validated");
+
+      const firstInvalid = form.querySelector(":invalid");
+      if (firstInvalid) {
+        firstInvalid.focus();
+        firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      return false;
+    }
+
+    form.classList.add("was-validated");
+    renderCard();
+    return true;
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    validateAndGenerate();
+  });
+
+  /* ============================================================
+     7. RESET
+     ============================================================ */
+
+  resetBtn.addEventListener("click", function () {
+    form.reset();
+    form.classList.remove("was-validated");
+    examName.value = "";
+    clearCard();
+    studentName.focus();
+  });
+
+  /* ============================================================
+     8. PRINT / SAVE AS PDF
+     ============================================================ */
+
+  document.querySelectorAll(".js-print").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      if (!isGenerated) {
+        if (!validateAndGenerate()) return;
+      }
+      window.print();
+    });
+  });
+
+  /* ============================================================
+     9. INIT
+     ============================================================ */
+
+  renderInstructions();
+  clearCard();
+
+})();
+</script>
+</body>
+</html>
